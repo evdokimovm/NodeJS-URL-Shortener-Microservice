@@ -1,12 +1,11 @@
-module.exports = function(app, db, cors) {
+module.exports = function(app, Urls, cors) {
 
-	var sites = db.collection('sites');
 	var APP_URL = 'http://localhost:8080/';
 
 	app.get('/:url', cors(), function(req, res) {
 		var url = APP_URL + req.params.url;
 		if (url !== APP_URL + 'favicon.ico') {
-			findURL(url, db, res);
+			findURL(url, Urls, res);
 		}
 	})
 
@@ -22,7 +21,7 @@ module.exports = function(app, db, cors) {
 			res.send(urlObj);
 
 			// Save original url and short url to the database
-			sites.save(urlObj, function(err) {
+			var saveUrls = new Urls(urlObj).save(function(err, result) {
 				if (err) throw err;
 			});
 		} else {
@@ -32,10 +31,9 @@ module.exports = function(app, db, cors) {
 		}
 	})
 
-	function findURL(link, db, res) {
-		// Check to see if the site is already there
-		// get the url
-		sites.findOne({
+	function findURL(link, Urls, res) {
+		// Check to see if the site is already there get the url
+		Urls.findOne({
 			'short_url': link
 		}, function(err, result) {
 			if (err) throw err;
