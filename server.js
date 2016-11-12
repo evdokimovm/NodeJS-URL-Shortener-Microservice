@@ -1,25 +1,14 @@
-var express = require('express');
-var app = express();
+var express = require('express')
+var app = express()
 
-var cors = require('cors');
-var api = require('./app/index.js');
+var api = require('./app/index')
 
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
+var mongoose = require('mongoose')
+mongoose.connect('mongodb://localhost:27017/URLShortener')
 
-var urlSchema = new Schema({
-	original_url: String,
-	short_url: String
-}, {
-	collection: 'sites'
-});
+app.use(api)
 
-var Urls = mongoose.model('Urls', urlSchema);
-mongoose.connect('mongodb://localhost:27017/urlShortener');
-
-api(app, Urls, cors);
-
-var port = process.env.PORT || 8080;
+var port = process.env.PORT || 8080
 app.listen(port, function() {
-	console.log('Node.js listening on port ' + port);
-});
+	console.log('Node.js listening on port ' + port)
+})

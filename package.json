@@ -2,8 +2,8 @@
 	"name": "URL-Shortener-Microservice",
 	"main": "server.js",
 	"dependencies" : {
-		"express": "4.13.4",
-		"mongoose": "4.5.0",
-		"cors": "2.7.1"
+		"express": "4.14.0",
+		"mongoose": "4.6.7",
+		"cors": "2.8.1"
 	}
 }

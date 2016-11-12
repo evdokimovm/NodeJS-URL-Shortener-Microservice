@@ -1,72 +1,68 @@
-module.exports = function(app, Urls, cors) {
+var express = require('express')
+var router = express.Router()
+var cors = require('cors')
 
-	var APP_URL = 'http://localhost:8080/';
+var URL = require('../models/url')
+var APP_URL = 'http://localhost:8080/'
 
-	app.get('/:url', cors(), function(req, res) {
-		var url = APP_URL + req.params.url;
-		if (url !== APP_URL + 'favicon.ico') {
-			findURL(url, Urls, res);
+router.get('/:url', cors(), function(req, res) {
+	var shortURL = APP_URL + req.params.url
+	if (shortURL !== APP_URL + 'favicon.ico') {
+		findURL(shortURL, URL, res)
+	}
+})
+
+router.get('/new/:url*', cors(), function(req, res) {
+	var originalURL = req.url.slice(5)
+	var URLObj = {}
+	if (validateURL(originalURL)) {
+		URLObj = {
+			'original_url': originalURL,
+			'short_url': APP_URL + linkGen()
 		}
-	})
+		res.json(URLObj)
 
-	app.get('/new/:url*', cors(), function(req, res) {
-		// Create short url, store and display the info
-		var url = req.url.slice(5);
-		var urlObj = {};
-		if (validateURL(url)) {
-			urlObj = {
-				'original_url': url,
-				'short_url': APP_URL + linkGen()
-			};
-			res.send(urlObj);
+		var saveURL = new URL(URLObj).save(function(err) {
+			if (err) throw err
+		})
+	} else {
+		res.json({
+			error: 'No short url found for given input'
+		})
+	}
+})
 
-			// Save original url and short url to the database
-			var saveUrls = new Urls(urlObj).save(function(err, result) {
-				if (err) throw err;
-			});
+function findURL(link, URL, res) {
+	URL.findOne({
+		'short_url': link
+	}, function(err, result) {
+		if (err) throw err
+		if (result) {
+			res.redirect(result.original_url)
 		} else {
-			res.send(JSON.stringify({
-				error : 'No short url found for given input'
-			}))
+			res.json({
+				error: 'Site not found!'
+			})
 		}
 	})
-
-	function findURL(link, Urls, res) {
-		// Check to see if the site is already there get the url
-		Urls.findOne({
-			'short_url': link
-		}, function(err, result) {
-			if (err) throw err;
-			// object of the url
-			if (result) {
-				// we have a result
-				res.redirect(result.original_url);
-			} else {
-				// we don't
-				res.send(JSON.stringify({
-					error : 'Site not found!'
-				}))
-			}
-		});
-	}
-
-	function linkGen() {
-		// Generates random string for link
-		var possible = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-		var linkGen = '';
-
-		for(var i = 0; i < 6; i += 1) {
-			linkGen += possible.charAt(Math.floor(Math.random() * possible.length));
-		}
-
-		return linkGen;
-	}
-
-	function validateURL(url) {
-		// Checks to see if it is an actual url
-		// Regex from https://gist.github.com/dperini/729294
-		var regex = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?$/i;
-		return regex.test(url);
-	}
-
 }
+
+function linkGen() {
+	var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+	var linkGen = ''
+
+	for (var i = 0; i < 6; i += 1) {
+		linkGen += possible.charAt(Math.floor(Math.random() * possible.length))
+	}
+
+	return linkGen
+}
+
+function validateURL(url) {
+	// Checks to see if it is an actual url
+	// Regex from https://gist.github.com/dperini/729294
+	var regex = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?$/i
+	return regex.test(url)
+}
+
+module.exports = router
