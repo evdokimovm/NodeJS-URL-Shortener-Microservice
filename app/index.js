@@ -14,20 +14,32 @@ router.get('/:url', cors(), function(req, res) {
 
 router.get('/new/:url*', cors(), function(req, res) {
 	var originalURL = req.url.slice(5)
-	var URLObj = {}
 	if (validateURL(originalURL)) {
-		URLObj = {
-			'original_url': originalURL,
-			'short_url': APP_URL + linkGen()
-		}
-		res.json(URLObj)
+		var newURL = new URL()
+		newURL.original_url = originalURL
+		newURL.short_url = APP_URL + linkGen()
 
-		var saveURL = new URL(URLObj).save(function(err) {
-			if (err) throw err
+		URL.findOne({
+			original_url: originalURL
+		}, function(err, data) {
+			if (data) {
+				res.json({
+					original_url: data.original_url,
+					short_url: data.short_url
+				})
+			} else {
+				newURL.save(function(err, data) {
+					if (err) throw err
+					res.json({
+						original_url: data.original_url,
+						short_url: data.short_url
+					})
+				})
+			}
 		})
 	} else {
 		res.json({
-			error: 'No short url found for given input'
+			error: 'Given URL Not Valid'
 		})
 	}
 })
@@ -41,7 +53,7 @@ function findURL(link, URL, res) {
 			res.redirect(result.original_url)
 		} else {
 			res.json({
-				error: 'Site not found!'
+				error: 'Site Not Found'
 			})
 		}
 	})
